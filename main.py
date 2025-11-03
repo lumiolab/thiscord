@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from asyncio import timeout
 from email.message import Message
 
 from discord.ext.commands import command
@@ -43,6 +44,7 @@ database.commit()
 
 class TicketView(discord.ui.View):
     @discord.ui.select(
+        custom_id="tickets",
         placeholder="Ticket Art",
         min_values=1,
         max_values=1,
@@ -213,7 +215,7 @@ async def setup(ctx: ApplicationContext, welcome_channel: TextChannel, ticket_ch
     )
     embed.set_footer(text="ThisCord | Setup")
     ticketEmbed = Embed(color=discord.Color.random(), title="Tickets", description="Wenn du Hilfe brauchst musst du einfach nur ein Ticket öffnen! Egal ob du dich bewerben möchtest oder andere Hilfe brauchst!")
-    await ticket_channel.send(embed=ticketEmbed, view=TicketView())
+    await ticket_channel.send(embed=ticketEmbed, view=TicketView(timeout=None))
     await ctx.respond(embed=embed)
 
 
@@ -356,7 +358,7 @@ async def ban(ctx: ApplicationContext, user: discord.Member, reason: str):
     dmEmbed.add_field(name="Server", value=ctx.guild.name, inline=False)
     dmEmbed.add_field(name="Moderator", value=f"{ctx.user.display_name} ({ctx.user.name})", inline=False)
     dmEmbed.add_field(name="Grund", value=reason, inline=False)
-    await dmchannel.send(dmEmbed)
+    await dmchannel.send(embed=dmEmbed)
 
 @bot.slash_command(name="kick", description="Kicke einen Nutzer vom Server")
 @default_permissions(kick_members=True)
@@ -391,12 +393,22 @@ async def kick(ctx: ApplicationContext, user: discord.Member, reason: str):
     dmEmbed.add_field(name="Server", value=ctx.guild.name, inline=False)
     dmEmbed.add_field(name="Moderator", value=f"{ctx.user.display_name} ({ctx.user.name})", inline=False)
     dmEmbed.add_field(name="Grund", value=reason, inline=False)
-    await dmchannel.send(dmEmbed)
+    await dmchannel.send(embed=dmEmbed)
 
 
 @bot.event
 async def on_close():
     database.close()
+
+@bot.slash_command(name="clearchat", description="Clear den Chat!")
+async def clearchat(ctx: ApplicationContext):
+    channel_new: TextChannel = await ctx.channel.clone()
+    embed=Embed(
+        title="Erfolgreich",
+        color=discord.Color.random(),
+        description="Erfolgreich gecleart."
+    )
+    await channel_new.send(embed=embed)
 
 
 bot.run(os.getenv("TOKEN"))
